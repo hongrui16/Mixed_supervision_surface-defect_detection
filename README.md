@@ -1,7 +1,7 @@
 ## Acknowledgement
 This is a modified versiono of [mixed-segdec-net-comind2021](https://github.com/vicoslab/mixed-segdec-net-comind2021.git).
 
-## Main new feature
+## Main new features
 A commonly used dataset dataloader is added, as well as other useful functions.
 You can parpare your dataset format as following:
 ```
