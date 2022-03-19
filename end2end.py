@@ -68,24 +68,23 @@ class End2End:
         self.num_epochs = self.cfg.EPOCHS
         # self.tensorboard_writer = TensorboardSummary(self.tensorboard_path) if WRITE_TENSORBOARD else None
         self.tensorboard_writer = SummaryWriter(log_dir=self.tensorboard_path) if WRITE_TENSORBOARD else None
-        
+        self.best_pred = 0.
+        self.start_epoch = 0
+        self.train_loader_len = len(self.train_loader)
         if args.resume is not None:
             if not os.path.isfile(args.resume):
                 raise RuntimeError("=> no checkpoint found at '{}'" .format(args.resume))
             checkpoint = torch.load(args.resume, map_location=torch.device('cpu'))
-            # args.start_epoch = checkpoint['epoch']
-            # if args.cuda:
-            #     self.model.module.load_state_dict(checkpoint['state_dict'])
-            # else:
-                # self.model.load_state_dict(checkpoint['state_dict'])
+            self.model.load_state_dict(checkpoint['state_dict'])
             
-            # if not args.ft:
-            #     self.optimizer.load_state_dict(checkpoint['optimizer'])
-            # self.best_pred = checkpoint['best_pred']
-            # print("=> loaded checkpoint '{}' (epoch {})".format(args.resume, checkpoint['epoch']))
-            self.model.load_state_dict(checkpoint)
-            print(f"=> loaded checkpoint {args.resume}")
-            
+            if not args.ft:
+                self.start_epoch = checkpoint['epoch']
+                self.optimizer.load_state_dict(checkpoint['optimizer'])
+                self.best_pred = checkpoint['best_pred']
+            self._log("=> loaded checkpoint '{}' (epoch {})\n".format(args.resume, checkpoint['epoch']))
+            # self.model.load_state_dict(checkpoint)
+            # print(f"=> loaded checkpoint {args.resume}")
+        
         self.print_run_params()
         print(f'train: {len(self.train_loader)}, val: {len(self.val_loader)}, test: {len(self.test_loader)}')
         
@@ -112,7 +111,7 @@ class End2End:
         losses = []
         
         
-        for epoch in range(self.num_epochs):
+        for epoch in range(self.start_epoch, self.num_epochs):
             ##train  
             losses = self.train(epoch)
             
@@ -124,16 +123,24 @@ class End2End:
             
             validation_data.append((validation_ap, epoch))
 
-            if validation_ap > max_validation:
-                max_validation = validation_ap
-                self._save_model(self.model, "best_state_dict.pth")
-            
+            if validation_ap > self.best_pred:
+                self.best_pred = validation_ap
+                is_best = True
+                # self._save_model(self.model, "best_state_dict.pth")
+                
+            is_best = self.save_checkpoint({
+                'epoch': epoch + 1,
+                'state_dict': self.model.state_dict(),
+                'optimizer': self.optimizer.state_dict(),
+                'best_pred': self.best_pred,
+            }, is_best)
+                
             _, _ = self.test(epoch)
             
             if epoch % test_step == 0 or epoch == self.num_epochs - 1:
                 self.eval_test_set(self.cfg.SAVE_IMAGES, False, False, epoch)
                 
-            self._save_model(self.model, "model.pth")
+            # self._save_model(self.model, "model.pth")
 
         self.eval_test_set(self.cfg.SAVE_IMAGES, False, False, epoch)
         self._save_train_results((losses, validation_data))
@@ -303,7 +310,7 @@ class End2End:
     def eval(self, data_loader, epoch = 0, mode = 'val'):
         self.model.eval()
         
-        stop = 600
+        stop = self.train_loader_len if len(data_loader) >= self.train_loader_len else len(data_loader)
         # samples_per_epoch = len(data_loader) * self.cfg.BATCH_SIZE
         samples_per_epoch = stop * self.cfg.BATCH_SIZE if len(data_loader) > stop else len(data_loader) * self.cfg.BATCH_SIZE
 
@@ -434,8 +441,8 @@ class End2End:
 
         ground_truths = np.array(ground_truths)
         predictions = np.array(predictions).astype(np.int64)
-        print(f'val ground_truths', ground_truths.shape, ground_truths)
-        print(f'val predictions', predictions.shape, predictions)
+        # print(f'val ground_truths', ground_truths.shape, ground_truths)
+        # print(f'val predictions', predictions.shape, predictions)
         # print()
         metrics = utils.get_metrics(ground_truths.astype(np.int64), predictions)
         # metrics = utils.get_metrics(np.array(ground_truths), np.array(predictions))
@@ -618,7 +625,7 @@ class End2End:
         self._log(f"Saving current model state to {output_name}")
         if os.path.exists(output_name):
             os.remove(output_name)
-
+        
         torch.save(model.state_dict(), output_name)
 
     def _get_optimizer(self, model):
@@ -708,6 +715,14 @@ class End2End:
             log_file.write(data+'\n')
         log_file.close()# 
         
+    def save_checkpoint(self, state, is_best, filename='checkpoint.pth.tar'):
+        """Saves checkpoint to disk"""
+
+        filename = os.path.join(self.model_path, filename)
+        torch.save(state, filename)
+        if is_best:
+            shutil.copyfile(filename, os.path.join(self.model_path, 'model_best.pth.tar'))
+        return False
     
     def get_plot_sample(self, image, seg_pre, seg_mask = None, seg_loss_mask = None, decision=None, is_pos = None,  blur=True):
         

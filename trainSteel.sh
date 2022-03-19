@@ -27,7 +27,7 @@
 
 
 python -u train_net.py  \
-    --GPU=0 \
+    --GPU=2 \
     --DATASET=STEEL \
     --RUN_NAME=train \
     --DATASET_PATH=/comp_robot/hongrui/pot_pro/severstal-steel-defect-detection \
@@ -48,4 +48,6 @@ python -u train_net.py  \
     --DEBUG=False \
     --TRAIN_NUM=300 \
     --NUM_SEGMENTED=150 \
-    --reverse_distance_transform
+    --resume=runs/STEEL/train/exp19/models/model_best.pth.tar \
+    --ft
+    # --reverse_distance_transform

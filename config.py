@@ -48,7 +48,7 @@ class Config:
     
     ### new add
     DEBUG = False
-    TEST_N_EPOCHS = 7
+    TEST_N_EPOCHS = 10
     N_CLS_SEG = 1
     testValTrain = -1
     ignore_loss_index = 255
@@ -62,6 +62,7 @@ class Config:
     output_stride = 8
     de_ignore_index = False
     resume = None
+    ft = False
     
     def init_extra(self):
         if self.WEIGHTED_SEG_LOSS and (self.WEIGHTED_SEG_LOSS_P is None or self.WEIGHTED_SEG_LOSS_MAX is None):
@@ -166,6 +167,7 @@ class Config:
         if args.output_stride is not None: self.output_stride = args.output_stride
         if args.de_ignore_index is not None: self.de_ignore_index = args.de_ignore_index
         if args.resume is not None: self.resume = args.resume
+        if args.ft is not None: self.ft = args.ft
         
 
     def get_as_dict(self):
@@ -215,6 +217,7 @@ class Config:
             "output_stride":self.output_stride,
             "de_ignore_index":self.de_ignore_index,
             "resume":self.resume,
+            "ft":self.ft,
             
         }
         return params

@@ -68,6 +68,8 @@ def parse_args():
     parser.add_argument('--output_stride', type=int, default=None, help=" ")
     parser.add_argument('--de_ignore_index', action='store_true', default=False, help="do not ignore index") 
     parser.add_argument('--resume', type=str, default=None, help="resume checkpoint filepath")
+    parser.add_argument('--ft', action='store_true', default=False, help="fine tune") 
+    
     
     
     
