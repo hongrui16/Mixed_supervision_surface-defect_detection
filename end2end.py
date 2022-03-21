@@ -75,15 +75,18 @@ class End2End:
             if not os.path.isfile(args.resume):
                 raise RuntimeError("=> no checkpoint found at '{}'" .format(args.resume))
             checkpoint = torch.load(args.resume, map_location=torch.device('cpu'))
-            self.model.load_state_dict(checkpoint['state_dict'])
-            
-            if not args.ft:
-                self.start_epoch = checkpoint['epoch']
-                self.optimizer.load_state_dict(checkpoint['optimizer'])
-                self.best_pred = checkpoint['best_pred']
-            self._log("=> loaded checkpoint '{}' (epoch {})\n".format(args.resume, checkpoint['epoch']))
+            if args.resume.endswith('.pth'):
+                self.model.load_state_dict(checkpoint)
+                self._log(f"=> loaded checkpoint {args.resume}")
+            else:
+                self.model.load_state_dict(checkpoint['state_dict'])
+                
+                if not args.ft:
+                    self.start_epoch = checkpoint['epoch']
+                    self.optimizer.load_state_dict(checkpoint['optimizer'])
+                    self.best_pred = checkpoint['best_pred']
+                self._log("=> loaded checkpoint '{}' (epoch {})\n".format(args.resume, checkpoint['epoch']))
             # self.model.load_state_dict(checkpoint)
-            # print(f"=> loaded checkpoint {args.resume}")
         
         self.print_run_params()
         print(f'train: {len(self.train_loader)}, val: {len(self.val_loader)}, test: {len(self.test_loader)}')

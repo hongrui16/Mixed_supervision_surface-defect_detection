@@ -27,7 +27,7 @@
 
 
 python -u train_net.py  \
-    --GPU=7 \
+    --GPU=2 \
     --DATASET=CustomPotSeg \
     --RUN_NAME=train \
     --DATASET_PATH=/home/hongrui/project/metro_pro/dataset/pot/0108_0222_obvious_defect_0 \
@@ -53,8 +53,10 @@ python -u train_net.py  \
     --crop_size=480 \
     --use_txtfile \
     --pot_train_mode=2 \
-    --de_ignore_index
-    # --reverse_distance_transform
+    --de_ignore_index \
+    --reverse_distance_transform \
+    --resume=runs/STEEL/train/exp17/models/best_state_dict.pth \
+    --ft
 
 
 
